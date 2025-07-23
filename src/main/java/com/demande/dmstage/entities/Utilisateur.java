@@ -1,8 +1,12 @@
 package com.demande.dmstage.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Data
+@NoArgsConstructor
 public class Utilisateur {
 
     @Id
@@ -14,21 +18,9 @@ public class Utilisateur {
     @Column(unique = true)
     private String email;
 
+   
+    @Column(name = "mot_de_passe")
     private String motDePasse;
 
-    // Constructeur vide
-    public Utilisateur() {}
-
-    // Getters et setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getMotDePasse() { return motDePasse; }
-    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+    private String role = "USER";
 }

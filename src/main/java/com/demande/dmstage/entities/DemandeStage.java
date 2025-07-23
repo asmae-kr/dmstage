@@ -1,9 +1,17 @@
 package com.demande.dmstage.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
+@Table(name = "demande_stage")
+@Data
+@NoArgsConstructor
 public class DemandeStage {
 
     @Id
@@ -17,85 +25,54 @@ public class DemandeStage {
     private String telephone;
     private String cin;
     private String adresseDomicile;
-    private String typeStage;
+
+    @Enumerated(EnumType.STRING)
+    private TypeStage typeStage;
 
     private LocalDate dateDebut;
-
     private String duree;
-    private String conventionStage;
-    private String demandeStage;
-    private String cv;
-    private String lettreMotivation;
-    private String cinRecto;
-    private String cinVerso;
-    private String photo;
-    private String statut;
+
+    private String conventionStage;    // nom/fichier de la convention
+    private String demandeStage;       // nom/fichier de la demande
+    private String cv;                 // nom/fichier du CV
+    private String lettreMotivation;   // nom/fichier lettre de motivation
+    private String cinRecto;           // nom/fichier recto CIN
+    private String cinVerso;           // nom/fichier verso CIN
+    private String photo;              // nom/fichier photo
+
+    @Enumerated(EnumType.STRING)
+    private Statut statut;
+
     private LocalDate dateDemande;
 
-    public DemandeStage() {
-        this.dateDemande = LocalDate.now();
-        this.statut = "EN_ATTENTE";
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utilisateur_id")
+    @JsonIgnore
+    private Utilisateur utilisateur;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.dateDemande == null) {
+            this.dateDemande = LocalDate.now();
+        }
+        if (this.statut == null) {
+            this.statut = Statut.EN_ATTENTE;
+        }
     }
 
-    // Getters & Setters
+    // Enum pour type de stage
+    public enum TypeStage {
+        NORMAL,
+        OBSERVATION,
+        INITIATION,
+        FIN_ETUDE,
+        PFE
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
-
-    public String getPrenom() { return prenom; }
-    public void setPrenom(String prenom) { this.prenom = prenom; }
-
-    public String getSexe() { return sexe; }
-    public void setSexe(String sexe) { this.sexe = sexe; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getTelephone() { return telephone; }
-    public void setTelephone(String telephone) { this.telephone = telephone; }
-
-    public String getCin() { return cin; }
-    public void setCin(String cin) { this.cin = cin; }
-
-    public String getAdresseDomicile() { return adresseDomicile; }
-    public void setAdresseDomicile(String adresseDomicile) { this.adresseDomicile = adresseDomicile; }
-
-    public String getTypeStage() { return typeStage; }
-    public void setTypeStage(String typeStage) { this.typeStage = typeStage; }
-
-    public LocalDate getDateDebut() { return dateDebut; }
-    public void setDateDebut(LocalDate dateDebut) { this.dateDebut = dateDebut; }
-
-    public String getDuree() { return duree; }
-    public void setDuree(String duree) { this.duree = duree; }
-
-    public String getConventionStage() { return conventionStage; }
-    public void setConventionStage(String conventionStage) { this.conventionStage = conventionStage; }
-
-    public String getDemandeStage() { return demandeStage; }
-    public void setDemandeStage(String demandeStage) { this.demandeStage = demandeStage; }
-
-    public String getCv() { return cv; }
-    public void setCv(String cv) { this.cv = cv; }
-
-    public String getLettreMotivation() { return lettreMotivation; }
-    public void setLettreMotivation(String lettreMotivation) { this.lettreMotivation = lettreMotivation; }
-
-    public String getCinRecto() { return cinRecto; }
-    public void setCinRecto(String cinRecto) { this.cinRecto = cinRecto; }
-
-    public String getCinVerso() { return cinVerso; }
-    public void setCinVerso(String cinVerso) { this.cinVerso = cinVerso; }
-
-    public String getPhoto() { return photo; }
-    public void setPhoto(String photo) { this.photo = photo; }
-
-    public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
-
-    public LocalDate getDateDemande() { return dateDemande; }
-    public void setDateDemande(LocalDate dateDemande) { this.dateDemande = dateDemande; }
+    // Enum pour statut
+    public enum Statut {
+        EN_ATTENTE,
+        ACCEPTE,
+        REFUSE
+    }
 }
