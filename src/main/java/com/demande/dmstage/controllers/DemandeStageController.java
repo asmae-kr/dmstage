@@ -1,5 +1,6 @@
 package com.demande.dmstage.controllers;
 
+import com.demande.dmstage.dto.DemandeStageDTO;
 import com.demande.dmstage.entities.DemandeStage;
 import com.demande.dmstage.entities.DemandeStage.TypeStage;
 import com.demande.dmstage.services.DemandeStageService;
@@ -9,11 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/demandes")
@@ -23,31 +23,40 @@ public class DemandeStageController {
 
     private final DemandeStageService demandeStageService;
 
-    // ✅ Méthode pour convertir String en enum TypeStage
+    // mémoire temporaire
+    private final ConcurrentHashMap<String, DemandeStage> demandeTempMap = new ConcurrentHashMap<>();
+
     private TypeStage convertirStringEnTypeStage(String typeStageStr) {
-        if (typeStageStr == null) {
-            return TypeStage.NORMAL; // valeur par défaut
-        }
+        if (typeStageStr == null) return TypeStage.NORMAL;
         try {
             return TypeStage.valueOf(typeStageStr.toUpperCase().replace(" ", "_"));
         } catch (IllegalArgumentException e) {
-            return TypeStage.NORMAL; // valeur par défaut si invalide
+            return TypeStage.NORMAL;
         }
     }
 
-    // ✅ POST : Ajouter une demande avec upload de fichiers
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<DemandeStage> ajouterDemande(
-            @RequestParam("nom") String nom,
-            @RequestParam("prenom") String prenom,
-            @RequestParam("sexe") String sexe,
+    @PostMapping("/info")
+    public ResponseEntity<String> recevoirInfosDemande(@RequestBody DemandeStageDTO dto) {
+        DemandeStage demande = new DemandeStage();
+        demande.setNom(dto.getNom());
+        demande.setPrenom(dto.getPrenom());
+        demande.setSexe(dto.getSexe());
+        demande.setEmail(dto.getEmail());
+        demande.setTelephone(dto.getTelephone());
+        demande.setCin(dto.getCin());
+        demande.setAdresseDomicile(dto.getAdresseDomicile());
+        demande.setTypeStage(convertirStringEnTypeStage(dto.getTypeStage()));
+        demande.setDateDebut(LocalDate.parse(dto.getDateDebut()));
+        demande.setDuree(dto.getDuree());
+        demandeStageService.sauvegarderDemande(demande);
+
+        demandeTempMap.put(dto.getEmail(), demande);
+        return ResponseEntity.ok("Données personnelles reçues avec succès.");
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<?> recevoirFichiers(
             @RequestParam("email") String email,
-            @RequestParam("telephone") String telephone,
-            @RequestParam("cin") String cin,
-            @RequestParam("adresseDomicile") String adresseDomicile,
-            @RequestParam("typeStage") String typeStageStr,
-            @RequestParam("dateDebut") String dateDebut,
-            @RequestParam("duree") String duree,
             @RequestParam("conventionStage") MultipartFile conventionStage,
             @RequestParam("demandeStage") MultipartFile demandeStage,
             @RequestParam("cv") MultipartFile cv,
@@ -57,20 +66,14 @@ public class DemandeStageController {
             @RequestParam("photo") MultipartFile photo
     ) throws IOException {
 
-        DemandeStage demande = new DemandeStage();
-        demande.setNom(nom);
-        demande.setPrenom(prenom);
-        demande.setSexe(sexe);
-        demande.setEmail(email);
-        demande.setTelephone(telephone);
-        demande.setCin(cin);
-        demande.setAdresseDomicile(adresseDomicile);
-        demande.setTypeStage(convertirStringEnTypeStage(typeStageStr));
-        demande.setDateDebut(LocalDate.parse(dateDebut));
-        demande.setDuree(duree);
+        if (!demandeTempMap.containsKey(email)) {
+            return ResponseEntity.badRequest().body("Aucune demande temporaire trouvée pour cet email.");
+        }
+
+        DemandeStage demande = demandeTempMap.get(email);
 
         String uploadDir = "uploads/";
-        Files.createDirectories(Paths.get(uploadDir)); // Crée le dossier si nécessaire
+        Files.createDirectories(Paths.get(uploadDir));
 
         Files.copy(conventionStage.getInputStream(), Paths.get(uploadDir, conventionStage.getOriginalFilename()), StandardCopyOption.REPLACE_EXISTING);
         demande.setConventionStage(conventionStage.getOriginalFilename());
@@ -94,26 +97,23 @@ public class DemandeStageController {
         demande.setPhoto(photo.getOriginalFilename());
 
         DemandeStage saved = demandeStageService.ajouterDemande(demande);
+        demandeTempMap.remove(email);
+
         return ResponseEntity.ok(saved);
     }
 
-    // ✅ GET : Toutes les demandes
     @GetMapping
     public ResponseEntity<List<DemandeStage>> getAllDemandes() {
         return ResponseEntity.ok(demandeStageService.getAllDemandes());
     }
 
-    // ✅ GET : Demandes par email
     @GetMapping("/email/{email}")
     public ResponseEntity<List<DemandeStage>> getDemandesParEmail(@PathVariable String email) {
         return ResponseEntity.ok(demandeStageService.getDemandesParEmail(email));
     }
 
-    // ✅ PUT : Mise à jour du statut
     @PutMapping("/{id}/statut")
-    public ResponseEntity<String> changerStatut(
-            @PathVariable Long id,
-            @RequestParam String nouveauStatut) {
+    public ResponseEntity<String> changerStatut(@PathVariable Long id, @RequestParam String nouveauStatut) {
         demandeStageService.changerStatut(id, nouveauStatut);
         return ResponseEntity.ok("Statut mis à jour avec succès");
     }

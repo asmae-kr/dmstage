@@ -53,27 +53,28 @@ public class DemandeStageService {
     }
 
     // Changer le statut d'une demande et notifier par email
-    public DemandeStage changerStatut(Long id, String statutStr) {
-        Optional<DemandeStage> optional = demandeStageRepository.findById(id);
+public DemandeStage changerStatut(Long id, String statutStr) {
+    Optional<DemandeStage> optional = demandeStageRepository.findById(id);
 
-        if (optional.isPresent()) {
-            DemandeStage demande = optional.get();
-            Statut statutEnum = convertirStringEnStatut(statutStr);
-            demande.setStatut(statutEnum);
-            DemandeStage saved = demandeStageRepository.save(demande);
+    if (optional.isPresent()) {
+        DemandeStage demande = optional.get();
+        // Utiliser la méthode pour convertir la String en Statut
+        Statut statutEnum = convertirStringEnStatut(statutStr);
+        demande.setStatut(statutEnum);
+        DemandeStage saved = demandeStageRepository.save(demande);
 
-            // Envoi d'email de notification
-            String contenu = "Bonjour " + demande.getNom() + ",\n\n"
-                    + "Votre demande de stage a été mise à jour.\n"
-                    + "👉 Nouveau statut : " + statutEnum.name() + "\n\n"
-                    + "Merci de votre confiance.";
-            emailService.envoyerEmail(demande.getEmail(), "Mise à jour de votre demande de stage", contenu);
+        // Envoi d'email de notification
+        String contenu = "Bonjour " + demande.getNom() + ",\n\n"
+                + "Votre demande de stage a été mise à jour.\n"
+                + "👉 Nouveau statut : " + statutEnum.name() + "\n\n"
+                + "Merci de votre confiance.";
+        emailService.envoyerEmail(demande.getEmail(), "Mise à jour de votre demande de stage", contenu);
 
-            return saved;
-        } else {
-            throw new RuntimeException("Demande non trouvée avec l'id: " + id);
-        }
+        return saved;
+    } else {
+        throw new RuntimeException("Demande non trouvée avec l'id: " + id);
     }
+}
 
     public List<DemandeStage> chercherDemandesAvecCriteres(
         String nom,
@@ -89,6 +90,10 @@ public class DemandeStageService {
         return demandeStageRepository.chercherAvecCriteres(
             nom, prenom, sexe, email, telephone, cin, adresseDomicile, typeStage, dateDebut, duree);
     }
+    public void sauvegarderDemande(DemandeStage demande) {
+    demandeStageRepository.save(demande);
+}
+
 
     public List<DemandeStage> getDemandesEntreDates(LocalDate debut, LocalDate fin) {
         return demandeStageRepository.findByDateDemandeBetween(debut, fin);
