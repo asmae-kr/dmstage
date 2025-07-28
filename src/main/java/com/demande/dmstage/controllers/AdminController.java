@@ -4,10 +4,13 @@ import com.demande.dmstage.entities.DemandeStage;
 import com.demande.dmstage.services.DemandeStageService;
 import com.demande.dmstage.services.ExcelExportService;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -41,19 +44,23 @@ public class AdminController {
     }
 
     // Récupérer toutes les demandes (sans filtre pour l’instant)
-    @GetMapping("/demandes")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllDemandes() {
-        try {
-            System.out.println("🔐 ADMIN demande la liste des demandes");
-            List<DemandeStage> demandes = demandeStageService.getAllDemandes();
-            System.out.println("✅ Nombre de demandes renvoyées : " + demandes.size());
-            return ResponseEntity.ok(demandes);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "Erreur interne serveur : " + e.getMessage()));
-        }
+   @GetMapping("/demandes")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<?> getAllDemandes(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+    try {
+        System.out.println("🔐 ADMIN demande la liste des demandes, page=" + page + ", size=" + size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DemandeStage> demandesPage = demandeStageService.getAllDemandes(pageable);
+        System.out.println("✅ Nombre de demandes renvoyées dans la page : " + demandesPage.getNumberOfElements());
+        return ResponseEntity.ok(demandesPage);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of("error", "Erreur interne serveur : " + e.getMessage()));
     }
+}
+
 
     // Changer le statut d’une demande
    @PutMapping("/demandes/{id}/statut")
@@ -121,7 +128,7 @@ public ResponseEntity<?> changerStatut(@PathVariable Long id, @RequestBody Map<S
             if (dateDebut != null && dateFin != null) {
                 demandes = demandeStageService.getDemandesEntreDates(dateDebut, dateFin);
             } else {
-                demandes = demandeStageService.getAllDemandes();
+                demandes = demandeStageService.getAllDemandes(Pageable.unpaged()).getContent();
             }
 
             byte[] excelContent = excelExportService.exportDemandesToExcel(demandes);

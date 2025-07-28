@@ -5,10 +5,17 @@ import com.demande.dmstage.entities.DemandeStage;
 import com.demande.dmstage.entities.DemandeStage.TypeStage;
 import com.demande.dmstage.services.DemandeStageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
+import java.util.Map;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDate;
@@ -102,19 +109,40 @@ public class DemandeStageController {
         return ResponseEntity.ok(saved);
     }
 
-    @GetMapping
-    public ResponseEntity<List<DemandeStage>> getAllDemandes() {
-        return ResponseEntity.ok(demandeStageService.getAllDemandes());
-    }
+   @GetMapping
+public ResponseEntity<List<DemandeStage>> getAllDemandes() {
+    Pageable pageable = PageRequest.of(0, 10); // page 0, taille 10
+    Page<DemandeStage> page = demandeStageService.getAllDemandes(pageable);
+    return ResponseEntity.ok(page.getContent()); // .getContent() pour retourner une liste
+}
+
 
     @GetMapping("/email/{email}")
     public ResponseEntity<List<DemandeStage>> getDemandesParEmail(@PathVariable String email) {
         return ResponseEntity.ok(demandeStageService.getDemandesParEmail(email));
     }
 
-    @PutMapping("/{id}/statut")
-    public ResponseEntity<String> changerStatut(@PathVariable Long id, @RequestParam String nouveauStatut) {
-        demandeStageService.changerStatut(id, nouveauStatut);
-        return ResponseEntity.ok("Statut mis à jour avec succès");
+   @GetMapping("/demandes/{id}/statut")
+@PreAuthorize("hasRole('USER')")
+public ResponseEntity<?> consulterStatut(@PathVariable Long id, Authentication authentication) {
+    String emailUtilisateur = authentication.getName(); // Email de l'utilisateur connecté
+
+    DemandeStage demande = demandeStageService.getDemandeParId(id);
+
+    if (demande == null) {
+        return ResponseEntity.status(404).body(Map.of("error", "Demande non trouvée"));
     }
+
+    if (!demande.getEmail().equals(emailUtilisateur)) {
+        return ResponseEntity.status(403).body(Map.of("error", "Accès interdit à cette demande"));
+    }
+
+    return ResponseEntity.ok(Map.of(
+        "id", demande.getId(),
+        "nom", demande.getNom(),
+        "prenom", demande.getPrenom(),
+        "statut", demande.getStatut().name()
+    ));
+}
+
 }

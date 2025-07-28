@@ -5,6 +5,8 @@ import com.demande.dmstage.entities.DemandeStage.Statut; // importe ton enum
 import com.demande.dmstage.repositories.DemandeStageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DemandeStageService {
 
-    private final EmailService emailService;
+   /*  private final EmailService emailService;*/
     private final DemandeStageRepository demandeStageRepository;
 
     // Convertit une String en enum Statut, ou renvoie EN_ATTENTE par défaut
@@ -39,11 +41,11 @@ public class DemandeStageService {
     }
 
     // Récupérer toutes les demandes (pour l'admin)
-    public List<DemandeStage> getAllDemandes() {
-        List<DemandeStage> demandes = demandeStageRepository.findAll();
-        System.out.println("🔍 Nombre total de demandes trouvées : " + demandes.size());
-        return demandes;
-    }
+    public Page<DemandeStage> getAllDemandes(Pageable pageable) {
+    Page<DemandeStage> demandesPage = demandeStageRepository.findAll(pageable);
+    System.out.println("🔍 Nombre total de demandes dans la page : " + demandesPage.getNumberOfElements());
+    return demandesPage;
+}
 
     // Récupérer les demandes d’un utilisateur par son email
     public List<DemandeStage> getDemandesParEmail(String email) {
@@ -64,12 +66,12 @@ public DemandeStage changerStatut(Long id, String statutStr) {
         DemandeStage saved = demandeStageRepository.save(demande);
 
         // Envoi d'email de notification
-        String contenu = "Bonjour " + demande.getNom() + ",\n\n"
+       /*  String contenu = "Bonjour " + demande.getNom() + ",\n\n"
                 + "Votre demande de stage a été mise à jour.\n"
                 + "👉 Nouveau statut : " + statutEnum.name() + "\n\n"
                 + "Merci de votre confiance.";
         emailService.envoyerEmail(demande.getEmail(), "Mise à jour de votre demande de stage", contenu);
-
+*/
         return saved;
     } else {
         throw new RuntimeException("Demande non trouvée avec l'id: " + id);
@@ -93,6 +95,10 @@ public DemandeStage changerStatut(Long id, String statutStr) {
     public void sauvegarderDemande(DemandeStage demande) {
     demandeStageRepository.save(demande);
 }
+public DemandeStage getDemandeParId(Long id) {
+    return demandeStageRepository.findById(id).orElse(null);
+}
+
 
 
     public List<DemandeStage> getDemandesEntreDates(LocalDate debut, LocalDate fin) {
