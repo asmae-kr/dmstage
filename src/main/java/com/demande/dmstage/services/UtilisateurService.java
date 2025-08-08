@@ -63,7 +63,6 @@ public class UtilisateurService {
     }
 }
 
-// Classe séparée pour tester la correspondance mot de passe / hash
 @Component
 class PasswordTest {
 
@@ -73,11 +72,10 @@ class PasswordTest {
         this.passwordEncoder = passwordEncoder;
     }
 
-  @PostConstruct
-public void generateHash() {
-    String motDePasseClair = "admin1234";
-    String hash = passwordEncoder.encode(motDePasseClair);
-    System.out.println("Hash BCrypt généré : " + hash);
-}
-
+    @PostConstruct
+    public void generateHash() {
+        String motDePasseClair = "admin1234";
+        String hash = passwordEncoder.encode(motDePasseClair);
+        System.out.println("Hash BCrypt généré : " + hash);
+    }
 }

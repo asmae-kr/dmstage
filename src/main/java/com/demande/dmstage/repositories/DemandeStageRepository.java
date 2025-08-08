@@ -18,18 +18,19 @@ public interface DemandeStageRepository extends JpaRepository<DemandeStage, Long
 
 
     @Query("""
-        SELECT d FROM DemandeStage d
-        WHERE (:nom IS NULL OR LOWER(d.nom) LIKE LOWER(CONCAT('%', :nom, '%')))
-        AND (:prenom IS NULL OR LOWER(d.prenom) LIKE LOWER(CONCAT('%', :prenom, '%')))
-        AND (:sexe IS NULL OR d.sexe = :sexe)
-        AND (:email IS NULL OR LOWER(d.email) LIKE LOWER(CONCAT('%', :email, '%')))
-        AND (:telephone IS NULL OR LOWER(d.telephone) LIKE LOWER(CONCAT('%', :telephone, '%')))
-        AND (:cin IS NULL OR LOWER(d.cin) LIKE LOWER(CONCAT('%', :cin, '%')))
-        AND (:adresseDomicile IS NULL OR LOWER(d.adresseDomicile) LIKE LOWER(CONCAT('%', :adresseDomicile, '%')))
-        AND (:typeStage IS NULL OR LOWER(d.typeStage) LIKE LOWER(CONCAT('%', :typeStage, '%')))
-        AND (:dateDebut IS NULL OR d.dateDebut = :dateDebut)
-        AND (:duree IS NULL OR LOWER(d.duree) LIKE LOWER(CONCAT('%', :duree, '%')))
-    """)
+    SELECT d FROM DemandeStage d
+    WHERE (:nom IS NULL OR LOWER(d.nom) LIKE LOWER(CONCAT('%', :nom, '%')))
+    AND (:prenom IS NULL OR LOWER(d.prenom) LIKE LOWER(CONCAT('%', :prenom, '%')))
+    AND (:sexe IS NULL OR d.sexe = :sexe)
+    AND (:email IS NULL OR LOWER(d.email) LIKE LOWER(CONCAT('%', :email, '%')))
+    AND (:telephone IS NULL OR LOWER(d.telephone) LIKE LOWER(CONCAT('%', :telephone, '%')))
+    AND (:cin IS NULL OR LOWER(d.cin) LIKE LOWER(CONCAT('%', :cin, '%')))
+    AND (:adresseDomicile IS NULL OR LOWER(d.adresseDomicile) LIKE LOWER(CONCAT('%', :adresseDomicile, '%')))
+    AND (:typeStage IS NULL OR LOWER(d.typeStage) LIKE LOWER(CONCAT('%', :typeStage, '%')))
+    AND ((:dateDebut IS NULL OR :dateFin IS NULL) OR d.dateDebut BETWEEN :dateDebut AND :dateFin)
+    AND (:duree IS NULL OR LOWER(d.duree) LIKE LOWER(CONCAT('%', :duree, '%')))
+""")
+
     List<DemandeStage> chercherAvecCriteres(
             @Param("nom") String nom,
             @Param("prenom") String prenom,

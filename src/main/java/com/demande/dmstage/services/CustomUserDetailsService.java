@@ -3,11 +3,15 @@ package com.demande.dmstage.services;
 import com.demande.dmstage.entities.Utilisateur;
 import com.demande.dmstage.repositories.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -17,34 +21,32 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // Recherche utilisateur par email (unique)
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l'email : " + email));
 
-        // Formatte le rôle pour qu'il soit sans le préfixe ROLE_
         String role = formatRole(utilisateur.getRole());
 
-        // Debug : affiche dans la console le rôle chargé
         System.out.println("Authentification utilisateur : " + email + ", rôle : " + role);
 
-        // Retourne UserDetails avec username, mot de passe hashé et rôle
+        GrantedAuthority authority = new SimpleGrantedAuthority(role);
+
         return User.builder()
                 .username(utilisateur.getEmail())
                 .password(utilisateur.getMotDePasse())
-                .roles(role) // Spring ajoute automatiquement "ROLE_" devant
+                .authorities(Collections.singletonList(authority))
                 .build();
     }
 
     /**
-     * Si le rôle est null, retourne "USER" par défaut.
-     * Si le rôle commence par "ROLE_", on le nettoie pour éviter "ROLE_ROLE_"
+     * Ajoute le préfixe "ROLE_" si ce n'est pas déjà présent.
+     * Si rôle null ou vide, retourne "ROLE_USER" par défaut.
      */
     private String formatRole(String role) {
         if (role == null || role.isBlank()) {
-            return "USER"; // Rôle par défaut
+            return "ROLE_USER";  // Rôle par défaut avec préfixe
         }
-        if (role.startsWith("ROLE_")) {
-            return role.substring(5);
+        if (!role.startsWith("ROLE_")) {
+            return "ROLE_" + role;  // Ajoute préfixe s'il manque
         }
         return role;
     }

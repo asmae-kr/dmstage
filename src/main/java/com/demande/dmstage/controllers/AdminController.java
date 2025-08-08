@@ -36,12 +36,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    // Test simple
-    @GetMapping("/test")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("OK ADMIN");
-    }
 
     // Récupérer toutes les demandes (sans filtre pour l’instant)
    @GetMapping("/demandes")
@@ -117,7 +111,7 @@ public ResponseEntity<?> changerStatut(@PathVariable Long id, @RequestBody Map<S
 
     // Export des demandes en Excel (filtre dateDemande entre dateDebut et dateFin)
     @GetMapping("/demandes/export")
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> exporterDemandesExcel(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin
